@@ -45,7 +45,7 @@ public class BotService {
     @Autowired
     private LineMessagingService lineMessagingService;
     
-    @Value("docomo.apikey")
+    @Value("${docomo.apikey}")
     private String docomoApiKey;
     
     @Value("${com.microsoft.cognitive.qnamaker}")
