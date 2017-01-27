@@ -15,6 +15,7 @@ import com.sakamichi46.wakasama.model.Image;
 import com.sakamichi46.wakasama.model.Images;
 import com.sakamichi46.wakasama.model.Question;
 import java.io.IOException;
+import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -58,6 +59,12 @@ public class BotService {
     
     private HttpEntity request;
     
+    @Value("#{'${wakasama.photo}'.split(',')}")
+    private List<String> photoKeywords;
+    
+    @Value("#{'${wakasama.chopstick}'.split(',')}")
+    private List<String> chopstickKeywords;
+    
     @PostConstruct
     public void init() {
         System.out.println("init");
@@ -70,9 +77,12 @@ public class BotService {
         event.getSource().getUserId();
         if(event.getMessage() instanceof TextMessageContent) {
             String message = ((TextMessageContent)event.getMessage()).getText();
-            if(message.contains("画像") || message.contains("写真") || message.contains("顔")) {
+            
+            photoKeywords.stream().anyMatch(w -> message.contains(w));
+            
+            if(photoKeywords.stream().anyMatch(w -> message.contains(w))) {
                 return image("若月佑美");
-            } else if(message.contains("はし") || message.contains("はしくん") || message.contains("箸") || message.contains("箸くん")) {
+            } else if(chopstickKeywords.stream().anyMatch(w -> message.contains(w))) {
                 return image("若月佑美 箸くん");
             }
             
@@ -120,7 +130,7 @@ public class BotService {
         Image image = images.getBody().getValue().get(r.nextInt(30));
         return new ImageMessage(image.getWebSearchUrl(), image.getThumbnailUrl());
     }
-    
+     
     private String faq(String word) {
         headers.set("Ocp-Apim-Subscription-Key", fnqMakerKey);
         Question question = new Question(word);
