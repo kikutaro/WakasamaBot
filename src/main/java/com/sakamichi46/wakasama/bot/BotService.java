@@ -1,12 +1,15 @@
 package com.sakamichi46.wakasama.bot;
 
 import com.linecorp.bot.client.LineMessagingService;
+import com.linecorp.bot.model.action.URIAction;
 import com.linecorp.bot.model.event.Event;
 import com.linecorp.bot.model.event.MessageEvent;
 import com.linecorp.bot.model.event.message.TextMessageContent;
 import com.linecorp.bot.model.message.ImageMessage;
 import com.linecorp.bot.model.message.Message;
+import com.linecorp.bot.model.message.TemplateMessage;
 import com.linecorp.bot.model.message.TextMessage;
+import com.linecorp.bot.model.message.template.ButtonsTemplate;
 import com.linecorp.bot.model.profile.UserProfileResponse;
 import com.sakamichi46.wakasama.model.Answer;
 import com.sakamichi46.wakasama.model.ConversationMessage;
@@ -15,6 +18,7 @@ import com.sakamichi46.wakasama.model.Image;
 import com.sakamichi46.wakasama.model.Images;
 import com.sakamichi46.wakasama.model.Question;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
@@ -59,6 +63,9 @@ public class BotService {
     
     private HttpEntity request;
     
+    @Value("#{'${wakasama}'.split(',')}")
+    private List<String> wakasamaKeywords;
+    
     @Value("#{'${wakasama.photo}'.split(',')}")
     private List<String> photoKeywords;
     
@@ -78,9 +85,9 @@ public class BotService {
         if(event.getMessage() instanceof TextMessageContent) {
             String message = ((TextMessageContent)event.getMessage()).getText();
             
-            photoKeywords.stream().anyMatch(w -> message.contains(w));
-            
-            if(photoKeywords.stream().anyMatch(w -> message.contains(w))) {
+            if(wakasamaKeywords.stream().anyMatch(w -> message.contains(w))) {
+                return showWakaInfoLink();
+            }else if(photoKeywords.stream().anyMatch(w -> message.contains(w))) {
                 return image("若月佑美");
             } else if(chopstickKeywords.stream().anyMatch(w -> message.contains(w))) {
                 return image("若月佑美 箸くん");
@@ -103,6 +110,19 @@ public class BotService {
             Logger.getLogger(BotService.class.getName()).log(Level.SEVERE, null, ex);
         }
         return "ななしのごんべえ";
+    }
+    
+    public TemplateMessage showWakaInfoLink() {
+        //プロフィール、ブログなど
+        return new TemplateMessage("若月佑美", new ButtonsTemplate(
+                "https://obs.line-scdn.net/0m0edf13c47251318a8d62c2c5cd52f6ae626d747e192f/f256x256png"
+                , "若月佑美"
+                ,"こんにちわかつき～"
+                ,Arrays.asList(
+                        new URIAction("ブログ", "http://blog.nogizaka46.com/yumi.wakatsuki/"),
+                        new URIAction("Wikipedia", "https://ja.wikipedia.org/wiki/%E8%8B%A5%E6%9C%88%E4%BD%91%E7%BE%8E"),
+                        new URIAction("グッズ", "http://www.nogizaka46shop.com/category/18")
+                )));
     }
     
     private TextMessage talk(MessageEvent event) {
