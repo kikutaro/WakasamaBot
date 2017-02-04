@@ -10,19 +10,24 @@ import com.linecorp.bot.model.message.Message;
 import com.linecorp.bot.model.message.TemplateMessage;
 import com.linecorp.bot.model.message.TextMessage;
 import com.linecorp.bot.model.message.template.ButtonsTemplate;
+import com.linecorp.bot.model.message.template.CarouselColumn;
+import com.linecorp.bot.model.message.template.CarouselTemplate;
 import com.linecorp.bot.model.profile.UserProfileResponse;
+import static com.sakamichi46.wakasama.constant.WakasamaBotConst.*;
 import com.sakamichi46.wakasama.model.Answer;
 import com.sakamichi46.wakasama.model.ConversationMessage;
 import com.sakamichi46.wakasama.model.ConversationResponse;
 import com.sakamichi46.wakasama.model.Image;
 import com.sakamichi46.wakasama.model.Images;
 import com.sakamichi46.wakasama.model.Question;
+import com.sakamichi46.wakasama.model.news.News;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -56,8 +61,8 @@ public class BotService {
     @Value("${com.microsoft.cognitive.qnamaker}")
     private String fnqMakerKey;
     
-    @Value("${com.microsoft.cognitive.bing.image}")
-    private String bingImageKey;
+    @Value("${com.microsoft.cognitive.bing}")
+    private String bingKey;
     
     private MultiValueMap<String, String> headers;
     
@@ -68,6 +73,9 @@ public class BotService {
     
     @Value("#{'${wakasama.photo}'.split(',')}")
     private List<String> photoKeywords;
+    
+    @Value("#{'${wakasama.news}'.split(',')}")
+    private List<String> newsKeywords;
     
     @Value("#{'${wakasama.chopstick}'.split(',')}")
     private List<String> chopstickKeywords;
@@ -87,10 +95,12 @@ public class BotService {
             
             if(wakasamaKeywords.stream().anyMatch(w -> message.contains(w))) {
                 return showWakaInfoLink();
-            }else if(photoKeywords.stream().anyMatch(w -> message.contains(w))) {
-                return image("若月佑美");
+            } else if(photoKeywords.stream().anyMatch(w -> message.contains(w))) {
+                return image(YUMI_WAKATSUKI.getValue());
             } else if(chopstickKeywords.stream().anyMatch(w -> message.contains(w))) {
-                return image("若月佑美 箸くん");
+                return image(YUMI_WAKATSUKI.getValue() + " 箸くん");
+            } else if(newsKeywords.stream().anyMatch(w -> message.contains(w))) {
+                return news(YUMI_WAKATSUKI.getValue());
             }
             
             String answer = faq(message);
@@ -114,9 +124,9 @@ public class BotService {
     
     public TemplateMessage showWakaInfoLink() {
         //プロフィール、ブログなど
-        return new TemplateMessage("若月佑美", new ButtonsTemplate(
+        return new TemplateMessage(YUMI_WAKATSUKI.getValue(), new ButtonsTemplate(
                 "https://obs.line-scdn.net/0m0edf13c47251318a8d62c2c5cd52f6ae626d747e192f/f256x256png"
-                , "若月佑美"
+                , YUMI_WAKATSUKI.getValue()
                 ,"こんにちわかつき～"
                 ,Arrays.asList(
                         new URIAction("ブログ", "http://blog.nogizaka46.com/yumi.wakatsuki/"),
@@ -141,7 +151,7 @@ public class BotService {
     }
     
     private ImageMessage image(String keyword) {
-        headers.set("Ocp-Apim-Subscription-Key", bingImageKey);
+        headers.set("Ocp-Apim-Subscription-Key", bingKey);
         HttpEntity entity = new HttpEntity(headers);
         HttpEntity<Images> images = restTemplate.exchange("https://api.cognitive.microsoft.com/bing/v5.0/images/search?q="+keyword+"&count=30&mkt=ja-JP", HttpMethod.GET, entity, Images.class, headers);
         
@@ -149,6 +159,24 @@ public class BotService {
         Random r = new Random(seed);
         Image image = images.getBody().getValue().get(r.nextInt(30));
         return new ImageMessage(image.getWebSearchUrl(), image.getThumbnailUrl());
+    }
+    
+    private TemplateMessage news(String message) {
+        //Cognitiveのテキストで分解
+        headers.set("Ocp-Apim-Subscription-Key", bingKey);
+        HttpEntity entity = new HttpEntity(headers);
+        HttpEntity<News> news = restTemplate.exchange("https://api.cognitive.microsoft.com/bing/v5.0/news/search?q="+message+"&count=5&mkt=ja-JP", HttpMethod.GET, entity, News.class, headers);
+        return new TemplateMessage("ニュース", new CarouselTemplate(
+            news.getBody().getValue().stream()
+                .map(n -> 
+                    new CarouselColumn(
+                        n.getImage().getThumbnail().getContentUrl(),
+                        n.getName().length() > 40 ? n.getName().substring(0, 40) : n.getName(),
+                        n.getDescription().length() > 60 ? n.getDescription().substring(0, 60) : n.getDescription(), 
+                            Arrays.asList(new URIAction("記事を読む", n.getUrl())
+                        )
+                    ))
+                .collect(Collectors.toList())));
     }
      
     private String faq(String word) {
