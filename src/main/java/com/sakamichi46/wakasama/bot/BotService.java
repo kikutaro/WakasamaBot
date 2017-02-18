@@ -1,6 +1,8 @@
 package com.sakamichi46.wakasama.bot;
 
 import com.linecorp.bot.client.LineMessagingService;
+import com.linecorp.bot.model.action.Action;
+import com.linecorp.bot.model.action.MessageAction;
 import com.linecorp.bot.model.action.URIAction;
 import com.linecorp.bot.model.event.Event;
 import com.linecorp.bot.model.event.MessageEvent;
@@ -22,6 +24,9 @@ import com.sakamichi46.wakasama.model.Images;
 import com.sakamichi46.wakasama.model.Question;
 import com.sakamichi46.wakasama.model.news.News;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -38,6 +43,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import retrofit2.Response;
+import twitter4j.Status;
 
 /**
  * Botサービス.
@@ -54,6 +60,9 @@ public class BotService {
     
     @Autowired
     private LineMessagingService lineMessagingService;
+    
+    @Autowired
+    private TwitterHandler twitterHandler;
     
     @Value("${docomo.apikey}")
     private String docomoApiKey;
@@ -101,6 +110,8 @@ public class BotService {
                 return image(YUMI_WAKATSUKI.getValue() + " 箸くん");
             } else if(newsKeywords.stream().anyMatch(w -> message.contains(w))) {
                 return news(YUMI_WAKATSUKI.getValue());
+            } else if(message.equals("#evatfm")) {
+                return tweet();
             }
             
             String answer = faq(message);
@@ -177,6 +188,27 @@ public class BotService {
                         )
                     ))
                 .collect(Collectors.toList())));
+    }
+    
+    private Message tweet() {
+        Status tweet = twitterHandler.selectTweet();
+        List<Action> listActions = new ArrayList<>();
+        listActions.add(new MessageAction("@waki_evatfm", "https://twitter.com/waki_evatfm"));
+        if(tweet != null) {
+            if(tweet.getURLEntities() != null && tweet.getURLEntities().length > 0) {
+                listActions.add(new MessageAction("ツイートリンク", tweet.getURLEntities()[0].getURL()));
+            }
+            DateFormat df = new SimpleDateFormat("yyyy/MM/dd");
+            return new TemplateMessage(
+                    "#evatfmのツイート", new ButtonsTemplate(
+                            null,
+                            null,
+                            df.format(tweet.getCreatedAt()) + "\r\n" + tweet.getText(),
+                            listActions
+                    )
+            );
+        }
+        return new TextMessage("ツイートが見つからなかったよぉ(涙)");
     }
      
     private String faq(String word) {
