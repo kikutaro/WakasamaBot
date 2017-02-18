@@ -2,7 +2,6 @@ package com.sakamichi46.wakasama.bot;
 
 import com.linecorp.bot.client.LineMessagingService;
 import com.linecorp.bot.model.action.Action;
-import com.linecorp.bot.model.action.MessageAction;
 import com.linecorp.bot.model.action.URIAction;
 import com.linecorp.bot.model.event.Event;
 import com.linecorp.bot.model.event.MessageEvent;
@@ -193,7 +192,7 @@ public class BotService {
     private Message tweet() {
         Status tweet = twitterHandler.selectTweet();
         List<Action> listActions = new ArrayList<>();
-        listActions.add(new MessageAction("@waki_evatfm", "https://twitter.com/waki_evatfm"));
+        listActions.add(new URIAction("@waki_evatfm", "https://twitter.com/waki_evatfm"));
         if(tweet != null) {
             if(tweet.getURLEntities() != null && tweet.getURLEntities().length > 0) {
                 listActions.add(new URIAction("ツイートリンク", tweet.getURLEntities()[0].getURL()));
