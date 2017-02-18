@@ -196,7 +196,7 @@ public class BotService {
         listActions.add(new MessageAction("@waki_evatfm", "https://twitter.com/waki_evatfm"));
         if(tweet != null) {
             if(tweet.getURLEntities() != null && tweet.getURLEntities().length > 0) {
-                listActions.add(new MessageAction("ツイートリンク", tweet.getURLEntities()[0].getURL()));
+                listActions.add(new URIAction("ツイートリンク", tweet.getURLEntities()[0].getURL()));
             }
             DateFormat df = new SimpleDateFormat("yyyy/MM/dd");
             return new TemplateMessage(
