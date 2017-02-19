@@ -20,6 +20,8 @@ import com.sakamichi46.wakasama.model.ConversationMessage;
 import com.sakamichi46.wakasama.model.ConversationResponse;
 import com.sakamichi46.wakasama.model.Image;
 import com.sakamichi46.wakasama.model.Images;
+import com.sakamichi46.wakasama.model.Member;
+import com.sakamichi46.wakasama.model.Music;
 import com.sakamichi46.wakasama.model.Question;
 import com.sakamichi46.wakasama.model.news.News;
 import java.io.IOException;
@@ -28,6 +30,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -35,8 +38,10 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -88,12 +93,16 @@ public class BotService {
     @Value("#{'${wakasama.chopstick}'.split(',')}")
     private List<String> chopstickKeywords;
     
+    private List<Member> nogiMembers;
+    
+    private List<Music> nogiMusics;
+    
     @PostConstruct
     public void init() {
         System.out.println("init");
         headers = new LinkedMultiValueMap<>();
         headers.add("Content-Type", "application/json");
-        
+        sakamichi46info();
     }
     
     public Message handler(MessageEvent event) {
@@ -111,6 +120,16 @@ public class BotService {
                 return news(YUMI_WAKATSUKI.getValue());
             } else if(message.equals("#evatfm")) {
                 return tweet();
+            } 
+            
+            Optional<Member> nogiMember = nogiMembers.stream().filter(m -> m.getName().contains(message)).findFirst();
+            if(nogiMember.isPresent()) {
+                return showMemberInfoLink(nogiMember.get());
+            }
+            
+            Optional<Music> nogiMusic = nogiMusics.stream().filter(m -> m.getTitle().contains(message)).findFirst();
+            if(nogiMusic.isPresent()) {
+                return showMusicInfoLink(nogiMusic.get());
             }
             
             String answer = faq(message);
@@ -217,5 +236,51 @@ public class BotService {
         
         Answer answer = restTemplate.postForObject("https://westus.api.cognitive.microsoft.com/qnamaker/v1.0/knowledgebases/00c0abf2-3f70-4e3c-85d3-8b361755d961/generateAnswer", request, Answer.class);
         return answer.getAnswer();
+    }
+    
+    private void sakamichi46info() {
+        System.out.println("calling sakamichi46 api");
+        ResponseEntity<List<Music>> nogiMusicsEntity
+                = restTemplate.exchange(
+                        "http://46api.sakamichi46.com/sakamichi46api/api/nogizaka46/music",
+                        HttpMethod.GET,
+                        null,
+                        new ParameterizedTypeReference<List<Music>>(){});
+        if(nogiMusicsEntity != null) {
+            nogiMusics = nogiMusicsEntity.getBody();
+        }
+        
+        ResponseEntity<List<Member>> nogiMemebersEntity
+                = restTemplate.exchange(
+                        "http://46api.sakamichi46.com/sakamichi46api/api/nogizaka46/profile",
+                        HttpMethod.GET,
+                        null,
+                        new ParameterizedTypeReference<List<Member>>(){});
+        if(nogiMemebersEntity != null) {
+            nogiMembers = nogiMemebersEntity.getBody();
+        }
+    }
+    
+    private TemplateMessage showMemberInfoLink(Member member) {
+        DateFormat df = new SimpleDateFormat("yyyy/MM/dd");
+        return new TemplateMessage(member.getName(), new ButtonsTemplate(
+                null
+                , member.getName()
+                , "誕生日 :" + df.format(member.getBirthday()) + " 星座:" + member.getConstellation()
+                ,Arrays.asList(
+                        new URIAction("ブログ", member.getBlogUri()),
+                        new URIAction("Wikipedia", member.getProfilePhotoUri()),
+                        new URIAction("グッズ", member.getGoodsUri())
+                )));
+    }
+    
+    private TemplateMessage showMusicInfoLink(Music music) {
+        return new TemplateMessage(music.getTitle(), new ButtonsTemplate(
+                music.getCoverPhotoUri()
+                , music.getTitle()
+                , music.getReleaseVersion() + " (" + (music.getType().equals("None") ? "通常版" : "タイプ" + music.getType() + ")")
+                ,Arrays.asList(
+                        new URIAction("歌詞サイト", music.getLyricsUri())
+                )));
     }
 }
