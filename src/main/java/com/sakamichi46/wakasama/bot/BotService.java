@@ -278,7 +278,7 @@ public class BotService {
         return new TemplateMessage(music.getTitle(), new ButtonsTemplate(
                 music.getCoverPhotoUri()
                 , music.getTitle()
-                , music.getReleaseVersion() + " (" + (music.getType().equals("None") ? "通常版" : "タイプ" + music.getType() + ")")
+                , music.getReleaseVersion() + " (" + (music.getType().equals("None") ? "通常版" : "タイプ" + music.getType()) + ")"
                 ,Arrays.asList(
                         new URIAction("歌詞サイト", music.getLyricsUri())
                 )));
