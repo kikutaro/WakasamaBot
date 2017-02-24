@@ -199,7 +199,7 @@ public class BotService {
             news.getBody().getValue().stream()
                 .map(n -> 
                     new CarouselColumn(
-                        n.getImage() != null && n.getImage().getThumbnail() != null ? n.getImage().getThumbnail().getContentUrl() : null,
+                        n.getImage() != null && n.getImage().getThumbnail() != null ? n.getImage().getThumbnail().getContentUrl() : "https://obs.line-scdn.net/0m0edf13c47251318a8d62c2c5cd52f6ae626d747e192f/f256x256png",
                         n.getName().length() > 40 ? n.getName().substring(0, 40) : n.getName(),
                         n.getDescription().length() > 60 ? n.getDescription().substring(0, 60) : n.getDescription(), 
                             Arrays.asList(new URIAction("記事を読む", n.getUrl())
