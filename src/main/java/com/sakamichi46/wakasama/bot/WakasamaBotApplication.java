@@ -8,6 +8,7 @@ import com.linecorp.bot.model.message.Message;
 import com.linecorp.bot.model.message.TextMessage;
 import com.linecorp.bot.spring.boot.annotation.EventMapping;
 import com.linecorp.bot.spring.boot.annotation.LineMessageHandler;
+import java.time.ZoneId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -28,6 +29,9 @@ public class WakasamaBotApplication {
     @Autowired
     private BotService bot;
     
+    @Autowired
+    private SendMailService mail;
+    
     /**
      * フォロー(友達追加)イベント処理.
      * 
@@ -37,6 +41,7 @@ public class WakasamaBotApplication {
     @EventMapping
     public Message handleFollowEvent(FollowEvent event) {
         String name = bot.profile(event);
+        mail.sendMail(event.getTimestamp().atZone(ZoneId.of("Asia/Tokyo")).toString() + "\r\n");
         return new TextMessage(name + "さんと友達になっちゃった！");
     }
     
