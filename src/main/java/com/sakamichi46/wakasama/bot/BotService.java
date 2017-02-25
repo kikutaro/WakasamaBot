@@ -137,7 +137,8 @@ public class BotService {
                 //FAQに固定回答がなかった場合、LUISを通して解析
                 LuisResult luis = luis(message);
                 if(luis != null) {
-                    Optional<Member> nogiMember = nogiMembers.stream().filter(m -> m.getName().equals(luis.getTopScoringIntent().getIntent())).findFirst();
+                    Optional<Member> nogiMember = nogiMembers.stream()
+                            .filter(m -> m.getName().equals(luis.getTopScoringIntent().getIntent()) && luis.getTopScoringIntent().getScore() > 0.25).findFirst();
                     if(nogiMember.isPresent()) {
                         return showMemberInfoLink(nogiMember.get());
                     }
