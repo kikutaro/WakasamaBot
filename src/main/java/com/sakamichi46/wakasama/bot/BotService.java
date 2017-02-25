@@ -20,11 +20,14 @@ import com.sakamichi46.wakasama.model.ConversationMessage;
 import com.sakamichi46.wakasama.model.ConversationResponse;
 import com.sakamichi46.wakasama.model.Image;
 import com.sakamichi46.wakasama.model.Images;
+import com.sakamichi46.wakasama.model.LuisResult;
 import com.sakamichi46.wakasama.model.Member;
 import com.sakamichi46.wakasama.model.Music;
 import com.sakamichi46.wakasama.model.Question;
 import com.sakamichi46.wakasama.model.news.News;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -122,11 +125,6 @@ public class BotService {
                 return tweet();
             } 
             
-            Optional<Member> nogiMember = nogiMembers.stream().filter(m -> m.getName().contains(message)).findFirst();
-            if(nogiMember.isPresent()) {
-                return showMemberInfoLink(nogiMember.get());
-            }
-            
             Optional<Music> nogiMusic = nogiMusics.stream().filter(m -> m.getTitle().contains(message)).findFirst();
             if(nogiMusic.isPresent()) {
                 return showMusicInfoLink(nogiMusic.get());
@@ -135,6 +133,15 @@ public class BotService {
             String answer = faq(message);
             if(!answer.equals("No good match found in the KB")) {
                 return new TextMessage(answer);
+            } else {
+                //FAQに固定回答がなかった場合、LUISを通して解析
+                LuisResult luis = luis(message);
+                if(luis != null) {
+                    Optional<Member> nogiMember = nogiMembers.stream().filter(m -> m.getName().equals(luis.getTopScoringIntent().getIntent())).findFirst();
+                    if(nogiMember.isPresent()) {
+                        return showMemberInfoLink(nogiMember.get());
+                    }
+                }
             }
         }
         return talk(event);
@@ -238,6 +245,17 @@ public class BotService {
         return answer.getAnswer();
     }
     
+    private LuisResult luis(String query) {
+        try {
+            URI luisUri = new URI("https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/473289c0-a35a-45f7-8e0e-ab6fa0176ff7?subscription-key=4df8e123b21a46348f720f50ed5c3a87&q=" + query + "&verbose=true");
+            ResponseEntity<LuisResult> retLuis = restTemplate.getForEntity(luisUri, LuisResult.class);
+            return retLuis.getBody();
+        } catch (URISyntaxException ex) {
+            Logger.getLogger(BotService.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
+    }
+    
     private void sakamichi46info() {
         System.out.println("calling sakamichi46 api");
         ResponseEntity<List<Music>> nogiMusicsEntity
@@ -259,6 +277,16 @@ public class BotService {
         if(nogiMemebersEntity != null) {
             nogiMembers = nogiMemebersEntity.getBody();
         }
+        
+        ResponseEntity<List<Member>> nogiMemebersThirdEntity
+                = restTemplate.exchange(
+                        "http://46api.sakamichi46.com/sakamichi46api/api/nogizaka46/3rd/profile",
+                        HttpMethod.GET,
+                        null,
+                        new ParameterizedTypeReference<List<Member>>(){});
+        if(nogiMemebersThirdEntity != null) {
+            nogiMemebersThirdEntity.getBody().stream().forEach(m -> nogiMembers.add(m));
+        }
     }
     
     private TemplateMessage showMemberInfoLink(Member member) {
@@ -268,8 +296,8 @@ public class BotService {
                 , member.getName()
                 , "誕生日 :" + df.format(member.getBirthday()) + " 星座:" + member.getConstellation()
                 ,Arrays.asList(
-                        new URIAction("ブログ", member.getBlogUri()),
-                        new URIAction("Wikipedia", member.getProfilePhotoUri()),
+                        new URIAction("ブログ", member.getBlogUri().isEmpty() ? "http://blog.nogizaka46.com/third/" : member.getBlogUri()),
+                        new URIAction("Wikipedia", "https://ja.wikipedia.org/wiki/" + member.getName()),
                         new URIAction("グッズ", member.getGoodsUri())
                 )));
     }
