@@ -1,5 +1,6 @@
 package com.sakamichi46.wakasama.bot;
 
+import com.linecorp.bot.model.event.BeaconEvent;
 import com.linecorp.bot.model.event.Event;
 import com.linecorp.bot.model.event.FollowEvent;
 import com.linecorp.bot.model.event.MessageEvent;
@@ -56,6 +57,11 @@ public class WakasamaBotApplication {
     @EventMapping
     public Message handleTextMessageEvent(MessageEvent<TextMessageContent> event) {
         return bot.handler(event);
+    }
+    
+    @EventMapping
+    public Message handleLineBeaconEvent(BeaconEvent event) {
+        return new TextMessage("あっ、これ、LINE Beaconからの通知だよ！私は近くにいるよー！");
     }
     
     /**
