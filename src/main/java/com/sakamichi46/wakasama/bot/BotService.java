@@ -214,13 +214,15 @@ public class BotService {
                         new ParameterizedTypeReference<List<Face>>(){});
         if(faceEntity != null) {
             List<Face> faces = faceEntity.getBody();
-            String ret = faces.stream()
-                    .map(f -> String.format("%d歳くらいの%sが%s表情",
-                            (int)f.getFaceAttributes().getAge(),
-                            f.getFaceAttributes().getGender().equals("male") ? "男の人" : "女の人",
-                            f.getFaceAttributes().getEmotion().getStrongestEmotion()))
-                    .collect(Collectors.joining("、"))  + "で写ってるね！";
-            return new TextMessage(ret);
+            if(faces.size() > 0) {
+                String ret = faces.stream()
+                        .map(f -> String.format("%d歳くらいの%sが%s表情",
+                                (int)f.getFaceAttributes().getAge(),
+                                f.getFaceAttributes().getGender().equals("male") ? "男の人" : "女の人",
+                                f.getFaceAttributes().getEmotion().getStrongestEmotion()))
+                        .collect(Collectors.joining("、"))  + "で写ってるね！";
+                return new TextMessage(ret);
+            }
         }
         return new TextMessage("人が写ってる画像を送ってみてね！");
     }
