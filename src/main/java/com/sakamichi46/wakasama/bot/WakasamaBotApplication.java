@@ -56,9 +56,13 @@ public class WakasamaBotApplication {
     public Message handleFollowEvent(FollowEvent event) {
         String name = bot.profile(event);
         mail.sendMail(event.getTimestamp().atZone(ZoneId.of("Asia/Tokyo")).toString() + "\r\n");
-        return new TextMessage(name + "さんと友達になっちゃった！"
-                + "「若様」"
-                + "「ニュース」");
+        return new TextMessage(name + "さんと友達になっちゃった！\r\n"
+                + "色々と話かけてみてね。例えば\r\n"
+                + "・若様\r\n"
+                + "・ニュース\r\n"
+                + "・画像\r\n"
+                + "・#evatfm\r\n"
+                + "とかかな。他にも曲名やメンバー名,昔のブログに出てきた言葉とか送ると面白いよ！");
     }
     
     /**
