@@ -7,6 +7,7 @@ import com.linecorp.bot.model.event.Event;
 import com.linecorp.bot.model.event.FollowEvent;
 import com.linecorp.bot.model.event.MessageEvent;
 import com.linecorp.bot.model.event.message.ImageMessageContent;
+import com.linecorp.bot.model.event.message.StickerMessageContent;
 import com.linecorp.bot.model.event.message.TextMessageContent;
 import com.linecorp.bot.model.message.Message;
 import com.linecorp.bot.model.message.TextMessage;
@@ -106,6 +107,11 @@ public class WakasamaBotApplication {
     @EventMapping
     public Message handleLineBeaconEvent(BeaconEvent event) {
         return new TextMessage("あっ、これ、LINE Beaconからの通知だよ！私は近くにいるよー！");
+    }
+    
+    @EventMapping
+    public Message handleStampEvent(MessageEvent<StickerMessageContent> event) {
+        return new TextMessage("スタンプありがとう～");
     }
     
     /**
