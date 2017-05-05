@@ -18,6 +18,7 @@ import static com.sakamichi46.wakasama.constant.WakasamaBotConst.*;
 import com.sakamichi46.wakasama.model.Answer;
 import com.sakamichi46.wakasama.model.ConversationMessage;
 import com.sakamichi46.wakasama.model.ConversationResponse;
+import com.sakamichi46.wakasama.model.Face;
 import com.sakamichi46.wakasama.model.Image;
 import com.sakamichi46.wakasama.model.Images;
 import com.sakamichi46.wakasama.model.LuisResult;
@@ -79,6 +80,9 @@ public class BotService {
     
     @Value("${com.microsoft.cognitive.bing}")
     private String bingKey;
+    
+    @Value("${com.microsoft.cognitive.face}")
+    private String faceApiKey;
     
     private MultiValueMap<String, String> headers;
     
@@ -158,7 +162,7 @@ public class BotService {
         }
         return "ななしのごんべえ";
     }
-    
+      
     public TemplateMessage showWakaInfoLink() {
         //プロフィール、ブログなど
         return new TemplateMessage(YUMI_WAKATSUKI.getValue(), new ButtonsTemplate(
@@ -196,6 +200,29 @@ public class BotService {
         Random r = new Random(seed);
         Image image = images.getBody().getValue().get(r.nextInt(30));
         return new ImageMessage(image.getWebSearchUrl(), image.getThumbnailUrl());
+    }
+    
+    public TextMessage faceImage(byte[] img) {
+        headers.set("Ocp-Apim-Subscription-Key", faceApiKey);
+        headers.set("Content-Type", "application/octet-stream");
+        request = new HttpEntity<>(img, headers);
+        ResponseEntity<List<Face>> faceEntity
+                = restTemplate.exchange(
+                        "https://westus.api.cognitive.microsoft.com/face/v1.0/detect?returnFaceId=true&returnFaceAttributes=age,gender,smile,emotion",
+                        HttpMethod.POST,
+                        request,
+                        new ParameterizedTypeReference<List<Face>>(){});
+        if(faceEntity != null) {
+            List<Face> faces = faceEntity.getBody();
+            String ret = faces.stream()
+                    .map(f -> String.format("%d歳くらいの%sが%s表情",
+                            (int)f.getFaceAttributes().getAge(),
+                            f.getFaceAttributes().getGender().equals("male") ? "男の人" : "女の人",
+                            f.getFaceAttributes().getEmotion().getStrongestEmotion()))
+                    .collect(Collectors.joining("、"))  + "で写ってるね！";
+            return new TextMessage(ret);
+        }
+        return new TextMessage("人が写ってる画像を送ってみてね！");
     }
     
     private TemplateMessage news(String message) {
