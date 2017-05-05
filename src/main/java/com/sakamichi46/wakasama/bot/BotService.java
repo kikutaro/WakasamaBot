@@ -268,6 +268,7 @@ public class BotService {
      
     private String faq(String word) {
         headers.set("Ocp-Apim-Subscription-Key", fnqMakerKey);
+        headers.set("Content-Type", "application/json");
         Question question = new Question(word);
         request = new HttpEntity<>(question,headers);
         
