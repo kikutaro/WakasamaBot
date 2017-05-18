@@ -134,20 +134,21 @@ public class BotService {
                 return showMusicInfoLink(nogiMusic.get());
             }
             
-            String answer = faq(message);
-            if(!answer.equals("No good match found in the KB")) {
-                return new TextMessage(answer);
-            } else {
+            //faqの学習で関連低いものも拾ってしまうため一旦停止
+            //String answer = faq(message);
+            //if(!answer.equals("No good match found in the KB")) {
+            //    return new TextMessage(answer);
+            //} else {
                 //FAQに固定回答がなかった場合、LUISを通して解析
                 LuisResult luis = luis(message);
                 if(luis != null) {
                     Optional<Member> nogiMember = nogiMembers.stream()
-                            .filter(m -> m.getName().equals(luis.getTopScoringIntent().getIntent()) && luis.getTopScoringIntent().getScore() > 0.25).findFirst();
+                            .filter(m -> m.getName().equals(luis.getTopScoringIntent().getIntent()) && luis.getTopScoringIntent().getScore() > 0.5).findFirst();
                     if(nogiMember.isPresent()) {
                         return showMemberInfoLink(nogiMember.get());
                     }
                 }
-            }
+            //}
         }
         return talk(event);
     }
