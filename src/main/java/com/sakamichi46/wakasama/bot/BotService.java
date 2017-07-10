@@ -29,6 +29,7 @@ import com.sakamichi46.wakasama.model.news.News;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -99,6 +100,9 @@ public class BotService {
     
     @Value("#{'${wakasama.chopstick}'.split(',')}")
     private List<String> chopstickKeywords;
+    
+    @Value("${azure.photo.url}")
+    private String basePhotoUrl;
     
     private List<Member> nogiMembers;
     
@@ -324,7 +328,7 @@ public class BotService {
     private TemplateMessage showMemberInfoLink(Member member) {
         DateFormat df = new SimpleDateFormat("yyyy/MM/dd");
         return new TemplateMessage(member.getName(), new ButtonsTemplate(
-                member.getProfilePhotoUri()
+                basePhotoUrl.concat(Paths.get(member.getProfilePhotoUri()).getFileName().toString())
                 , member.getName()
                 , "誕生日 :" + df.format(member.getBirthday()) + " 星座:" + member.getConstellation()
                 ,Arrays.asList(
