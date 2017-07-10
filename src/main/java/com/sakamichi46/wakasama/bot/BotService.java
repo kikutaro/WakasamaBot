@@ -324,7 +324,7 @@ public class BotService {
     private TemplateMessage showMemberInfoLink(Member member) {
         DateFormat df = new SimpleDateFormat("yyyy/MM/dd");
         return new TemplateMessage(member.getName(), new ButtonsTemplate(
-                null
+                member.getProfilePhotoUri()
                 , member.getName()
                 , "誕生日 :" + df.format(member.getBirthday()) + " 星座:" + member.getConstellation()
                 ,Arrays.asList(
