@@ -143,7 +143,7 @@ public class BotService {
                 LuisResult luis = luis(message);
                 if(luis != null) {
                     Optional<Member> nogiMember = nogiMembers.stream()
-                            .filter(m -> m.getName().equals(luis.getTopScoringIntent().getIntent()) && luis.getTopScoringIntent().getScore() > 0.5).findFirst();
+                            .filter(m -> m.getName().equals(luis.getTopScoringIntent().getIntent()) && luis.getTopScoringIntent().getScore() > 0.75).findFirst();
                     if(nogiMember.isPresent()) {
                         return showMemberInfoLink(nogiMember.get());
                     }
